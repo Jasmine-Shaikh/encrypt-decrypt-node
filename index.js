@@ -15,15 +15,11 @@ const storage = multer.diskStorage({
     cb(null, 'file.txt');
   },
 });
-
 const upload = multer({ storage: storage }).single("avatar");
-
 const algo = 'AES-256-ECB';
 
+// ----------------------------Encrpytion ----------------------------
 const encryptFile = (password) => {
-  fs.unlink('./documents/encrypted.txt.enc', function (err) {
-   
-});
   const cipherKey = crypto.createHash("sha256").update(password).digest();
   const cipher = crypto.createCipheriv(algo, cipherKey, null);
   let readStream = fs.createReadStream("./documents/file.txt");
@@ -34,49 +30,54 @@ const encryptFile = (password) => {
   writeStream.on("close", () => {
     console.log("Encryption success!");
   });
+ 
 };
 
+// --------------------------------Decryption -----------------------------------
 const decryptFile = (password) => {
-  fs.unlink("./documents/file.txt", function (err) {
-    
-   
-});
-  fs.unlink("./documents/decrypted.txt", function (err) {
-   
-});
-    const readInitVect = fs.createReadStream("./documents/encrypted.txt.enc", {
-      end: 15,
-    });
+
   
-    let initVect;
-    readInitVect.on("data", (chunk) => {
-      initVect = chunk;
-    });
-  
-    readInitVect.on("close", () => {
-      const cipherKey = crypto
-        .createHash("sha256")
-        .update(password)
-        .digest();
-      const readStream = fs.createReadStream("./documents/encrypted.txt.enc");
-      const decipher = crypto.createDecipheriv(algo, cipherKey, null);
-      let writeStream = fs.createWriteStream("./documents/decrypted.txt");
-  
-   
-      readStream.pipe(decipher).pipe(writeStream);
-      writeStream.on("close", () => {
-        console.log("Decryption success!");
-      });
-  
-    });
+  const readInitVect = fs.createReadStream("./documents/encrypted.txt.enc", {
+    end: 15,
+  });
+
+  let initVect;
+  readInitVect.on("data", (chunk) => {
+    initVect = chunk;
+  });
+
+  readInitVect.on("close", () => {
+    const cipherKey = crypto
+      .createHash("sha256")
+      .update(password)
+      .digest();
+    const readStream = fs.createReadStream("./documents/encrypted.txt.enc");
+    const decipher = crypto.createDecipheriv(algo, cipherKey, null);
+    let writeStream = fs.createWriteStream("./documents/decrypted.txt");
 
  
+    readStream.pipe(decipher).pipe(writeStream);
+    writeStream.on("close", () => {
+      console.log("Decryption success!");
+    });
+
+  });
 
 };
 
+
+//--------------------------------Routes----------------------------------
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname + "/index.html"));
 });
+app.get("/encrypt-download",(req,res)=>{
+
+  res.status(200).sendFile(path.join(__dirname + "/documents/encrypted.txt.enc"));
+})
+app.get("/decrypt-download",(req,res)=>{
+
+  res.status(200).sendFile(path.join(__dirname + "/documents/decrypted.txt"));
+})
 
 app.post("/encryption_complete", upload, function (req, res) {
    
@@ -84,6 +85,7 @@ app.post("/encryption_complete", upload, function (req, res) {
   console.log(password)
   try { 
     encryptFile(password)
+    console.log(path.join(__dirname + "/encrypt.html"))
     res.status(200).sendFile(path.join(__dirname + "/encrypt.html"));
    
     
@@ -106,8 +108,6 @@ app.post("/decryption_complete", upload, function (req, res) {
  });
     res.status(400).send(error.message);
   }
-
-
 });
 
 
